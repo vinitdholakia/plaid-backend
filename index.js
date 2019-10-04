@@ -16,9 +16,9 @@ var client = new plaid.Client(
   constants.PLAID_SECRET,
   constants.PLAID_PUBLIC_KEY,
   plaid.environments[constants.PLAID_ENV], {
-    version: '2019-05-29',
-    clientApp: 'Plaid Quickstart'
-  }
+  version: '2019-05-29',
+  clientApp: 'Plaid Quickstart'
+}
 );
 
 var app = express();
@@ -28,7 +28,14 @@ app.use(bodyParser.urlencoded({
   extended: false
 }));
 app.use(bodyParser.json());
-
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Authorization, X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept");
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+  next();
+});
+var apis = require('./apis')(express);
+app.use("/api", apis);
 app.get('/', function (request, response, next) {
   response.render('index.ejs', {
     PLAID_PUBLIC_KEY: constants.PLAID_PUBLIC_KEY,
@@ -77,7 +84,7 @@ app.get('/transactions', function (request, response, next) {
   // Pull transactions for the Item for the last 30 days
   var startDate = moment().subtract(30, 'days').format('YYYY-MM-DD');
   var endDate = moment().format('YYYY-MM-DD');
-  client.getTransactions(ACCESS_TOKEN, startDate, endDate, {
+  client.getTransactions(require('./core/commons/users')["7q7m68aPQAfxrlNGd8BNHQ9d9rMjpWTg9PlnM"], startDate, endDate, {
     count: 250,
     offset: 0,
   }, function (error, transactionsResponse) {
@@ -87,19 +94,39 @@ app.get('/transactions', function (request, response, next) {
         error: error
       });
     } else {
-      prettyPrintResponse(transactionsResponse);
+     // prettyPrintResponse(transactionsResponse);
       response.json({
         error: null,
         transactions: transactionsResponse
       });
     }
   });
+
 });
+
+app.get('/income',(request, response, next)=>{
+  client.getIncome(require('./core/commons/users')["7q7m68aPQAfxrlNGd8BNHQ9d9rMjpWTg9PlnM"], (error, result) => {
+    // Handle err
+    if (error != null) {
+      prettyPrintResponse(error);
+      return response.json({
+        error: error
+      });
+    } else {
+      var income = result.income;
+     // prettyPrintResponse(transactionsResponse);
+      response.json({
+        error: null,
+        income: income
+      });
+    }
+  });
+})
 
 // Retrieve Identity for an Item
 // https://plaid.com/docs/#identity
 app.get('/identity', function (request, response, next) {
-  client.getIdentity(ACCESS_TOKEN, function (error, identityResponse) {
+  client.getIdentity(require('./core/commons/users')["7q7m68aPQAfxrlNGd8BNHQ9d9rMjpWTg9PlnM"], function (error, identityResponse) {
     if (error != null) {
       prettyPrintResponse(error);
       return response.json({
@@ -117,7 +144,7 @@ app.get('/identity', function (request, response, next) {
 // Retrieve real-time Balances for each of an Item's accounts
 // https://plaid.com/docs/#balance
 app.get('/balance', function (request, response, next) {
-  client.getBalance(ACCESS_TOKEN, function (error, balanceResponse) {
+  client.getBalance(require('./core/commons/users')["7q7m68aPQAfxrlNGd8BNHQ9d9rMjpWTg9PlnM"], function (error, balanceResponse) {
     if (error != null) {
       prettyPrintResponse(error);
       return response.json({
@@ -135,7 +162,7 @@ app.get('/balance', function (request, response, next) {
 // Retrieve an Item's accounts
 // https://plaid.com/docs/#accounts
 app.get('/accounts', function (request, response, next) {
-  client.getAccounts(ACCESS_TOKEN, function (error, accountsResponse) {
+  client.getAccounts(require('./core/commons/users')["7q7m68aPQAfxrlNGd8BNHQ9d9rMjpWTg9PlnM"], function (error, accountsResponse) {
     if (error != null) {
       prettyPrintResponse(error);
       return response.json({
@@ -153,7 +180,7 @@ app.get('/accounts', function (request, response, next) {
 // Retrieve ACH or ETF Auth data for an Item's accounts
 // https://plaid.com/docs/#auth
 app.get('/auth', function (request, response, next) {
-  client.getAuth(ACCESS_TOKEN, function (error, authResponse) {
+  client.getAuth(require('./core/commons/users')["7q7m68aPQAfxrlNGd8BNHQ9d9rMjpWTg9PlnM"], function (error, authResponse) {
     if (error != null) {
       prettyPrintResponse(error);
       return response.json({
@@ -171,7 +198,7 @@ app.get('/auth', function (request, response, next) {
 // Retrieve Holdings for an Item
 // https://plaid.com/docs/#investments
 app.get('/holdings', function (request, response, next) {
-  client.getHoldings(ACCESS_TOKEN, function (error, holdingsResponse) {
+  client.getHoldings(require('./core/commons/users')["7q7m68aPQAfxrlNGd8BNHQ9d9rMjpWTg9PlnM"], function (error, holdingsResponse) {
     if (error != null) {
       prettyPrintResponse(error);
       return response.json({
@@ -191,7 +218,7 @@ app.get('/holdings', function (request, response, next) {
 app.get('/investment_transactions', function (request, response, next) {
   var startDate = moment().subtract(30, 'days').format('YYYY-MM-DD');
   var endDate = moment().format('YYYY-MM-DD');
-  client.getInvestmentTransactions(ACCESS_TOKEN, startDate, endDate, function (error, investmentTransactionsResponse) {
+  client.getInvestmentTransactions(require('./core/commons/users')["7q7m68aPQAfxrlNGd8BNHQ9d9rMjpWTg9PlnM"], startDate, endDate, function (error, investmentTransactionsResponse) {
     if (error != null) {
       prettyPrintResponse(error);
       return response.json({
@@ -254,7 +281,7 @@ app.get('/assets', function (request, response, next) {
 app.get('/item', function (request, response, next) {
   // Pull the Item - this includes information about available products,
   // billed products, webhook information, and more.
-  client.getItem(ACCESS_TOKEN, function (error, itemResponse) {
+  client.getItem(require('./core/commons/users')["7q7m68aPQAfxrlNGd8BNHQ9d9rMjpWTg9PlnM"], function (error, itemResponse) {
     if (error != null) {
       prettyPrintResponse(error);
       return response.json({
@@ -280,9 +307,6 @@ app.get('/item', function (request, response, next) {
   });
 });
 
-var server = app.listen(constants.APP_PORT, function () {
-  console.log('plaid-quickstart server listening on port ' + constants.APP_PORT);
-});
 
 var prettyPrintResponse = response => {
   console.log(util.inspect(response, {
@@ -350,10 +374,14 @@ var respondWithAssetReport = (
 
 app.post('/set_access_token', function (request, response, next) {
   ACCESS_TOKEN = request.body.access_token;
-  client.getItem(ACCESS_TOKEN, function (error, itemResponse) {
+  client.getItem(require('./core/commons/users')["7q7m68aPQAfxrlNGd8BNHQ9d9rMjpWTg9PlnM"], function (error, itemResponse) {
     response.json({
       item_id: itemResponse.item.item_id,
       error: false,
     });
   });
+});
+
+var server = app.listen(constants.APP_PORT, function () {
+  console.log('plaid-quickstart server listening on port ' + constants.APP_PORT);
 });
