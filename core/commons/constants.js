@@ -1,0 +1,9 @@
+module.exports = {
+    APP_PORT: "8000",
+    PLAID_CLIENT_ID: "5d9688a4851b6200129804f8",
+    PLAID_SECRET: "aa8e27ede8000dbc79a566ce9cd457",
+    PLAID_PUBLIC_KEY: "a0e6c0b1a178c9e885e19266009198",
+    PLAID_PRODUCTS: "transactions",
+    PLAID_COUNTRY_CODES: "US,CA,GB,FR,ES",
+    PLAID_ENV: "sandbox",
+}
