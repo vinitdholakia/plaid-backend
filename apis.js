@@ -89,6 +89,7 @@ module.exports = (express) => {
 
     Router.get("/transact", (req, res, next) => {
         let amount = req.query.amount || 0;
+        amount = parseInt(amount);
         if (amount > 0) {
             let count = goals.length;
             let s = 0;
@@ -119,7 +120,8 @@ module.exports = (express) => {
         }
     })
     Router.get("/addsalary", (req, res, next) => {
-        let amount = req.query.amount || 5000;
+        let amount = req.query.amount || 0;
+        amount = parseInt(amount);
         for (let index = 0; index < goals.length; index++) {
             if (amount > goals[index]['monthlyAdd']) {
                 let min = Math.min(parseInt(goals[index]['target']) - parseInt(goals[index]['fulfilled']), parseInt(goals[index]['monthlyAdd']));
@@ -134,7 +136,8 @@ module.exports = (express) => {
         })
     })
     Router.get("/addsavings", (req, res, next) => {
-        let amount = req.query.amount || 0;
+        let amount = parseInt(req.query.amount || "0") || 1000;
+        amount = parseInt(amount);
         if (amount > 0) {
             let count = goals.length;
             let s = 0;
